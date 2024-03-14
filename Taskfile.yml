@@ -6,12 +6,14 @@ tasks:
   clippy:
     cmds:
       - cargo clippy --fix
-    silent: true
+    desc: Run clippy
 
-  release:
+  build-release:
     cmds:
       - cargo build --release
+    desc: Builds release version of the app
 
-  manifest:
+  create-manifest:
     cmds:
       - cargo run --release -- --cwd "{{.USER_WORKING_DIR}}" --alias mgen
+    desc: Runs create manifest for current crate.
