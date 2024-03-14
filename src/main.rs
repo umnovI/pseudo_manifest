@@ -65,9 +65,13 @@ fn main() -> Result<()> {
     if !cwd.is_dir() {
         bail!("Could not find directory: {}", cwd.display());
     }
-    let cargo_toml = read_to_string(cwd.join("Cargo.toml"))?
-        .parse::<Table>()
-        .unwrap();
+    let cargo_toml = read_to_string(
+        cwd.join("Cargo.toml")
+            .canonicalize()
+            .with_context(|| "Could not find Cargo.toml")?,
+    )?
+    .parse::<Table>()
+    .unwrap();
 
     let cargo_meta = CargoToml {
         name: cargo_toml["package"]["name"]
