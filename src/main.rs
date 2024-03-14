@@ -52,6 +52,12 @@ fn main() -> Result<()> {
     let scoop_bucket = home::home_dir()
         .with_context(|| "Could not find home.")?
         .join("scoop/buckets/local");
+    if !scoop_bucket.is_dir() {
+        bail!(
+            "Could not find path to Scoop bucket. Please make sure that path {} exists.",
+            scoop_bucket.display()
+        );
+    }
 
     let cwd = clean(args.cwd);
     if !cwd.is_dir() {
