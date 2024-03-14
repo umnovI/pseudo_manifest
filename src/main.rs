@@ -8,6 +8,7 @@ use std::{
 use anyhow::{bail, Context, Ok, Result};
 use clap::Parser;
 
+use colored::Colorize;
 use path_clean::clean;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -106,7 +107,7 @@ fn main() -> Result<()> {
     let mut writer = BufWriter::new(file);
     serde_json::to_writer(&mut writer, &manifest)?;
     writer.flush()?;
-    println!("Manifest file successfully created.");
+    println!("{}", "Manifest file successfully created.".green());
 
     Ok(())
 }
