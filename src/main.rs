@@ -2,7 +2,7 @@
 
 use std::{
     fs::{read_to_string, File},
-    io::{BufWriter, Write},
+    io::Write,
 };
 
 use anyhow::{bail, Context, Ok, Result};
@@ -11,7 +11,7 @@ use clap::Parser;
 use colored::Colorize;
 use path_clean::clean;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{json, to_string_pretty, Value};
 use sha256::try_digest;
 use toml::Table;
 
@@ -103,10 +103,8 @@ fn main() -> Result<()> {
         }}),
     };
 
-    let file = File::create(scoop_bucket.join(format!("{}.json", cargo_meta.name)))?;
-    let mut writer = BufWriter::new(file);
-    serde_json::to_writer(&mut writer, &manifest)?;
-    writer.flush()?;
+    let mut file = File::create(scoop_bucket.join(format!("{}.json", cargo_meta.name)))?;
+    file.write_all(to_string_pretty(&manifest)?.as_bytes())?;
     println!("{}", "Manifest file successfully created.".green());
 
     Ok(())
