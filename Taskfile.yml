@@ -7,3 +7,11 @@ tasks:
     cmds:
       - cargo clippy --fix
     silent: true
+
+  release:
+    cmds:
+      - cargo build --release
+
+  manifest:
+    cmds:
+      - cargo run --release -- --cwd "{{.USER_WORKING_DIR}}" --alias mgen
