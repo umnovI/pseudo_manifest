@@ -106,7 +106,7 @@ fn main() -> Result<()> {
     let mut writer = BufWriter::new(file);
     serde_json::to_writer(&mut writer, &manifest)?;
     writer.flush()?;
-    println!("Manifest file successfully written.");
+    println!("Manifest file successfully created.");
 
     Ok(())
 }
