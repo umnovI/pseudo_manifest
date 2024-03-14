@@ -33,7 +33,7 @@ struct CargoToml {
     name: String,
 }
 
-/// Simple program to greet a person
+/// This program creates pseudo manifest of your crate's release .exe for Scoop
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
