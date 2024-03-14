@@ -1,19 +1,17 @@
 //! This crate creates pseudo manifest for Scoop
 
 use std::{
-    collections::HashMap,
-    fs::{self, read_to_string, File},
+    fs::{read_to_string, File},
     io::{BufWriter, Write},
-    path::{Path, PathBuf},
 };
 
 use anyhow::{bail, Context, Ok, Result};
 use clap::Parser;
-use home;
-use path_clean::{clean, PathClean};
+
+use path_clean::clean;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, to_string_pretty, Value};
-use sha256::{digest, try_digest, TrySha256Digest};
+use serde_json::{json, Value};
+use sha256::try_digest;
 use toml::Table;
 
 /// Pseudo manifest for Scoop
