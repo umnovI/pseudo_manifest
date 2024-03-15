@@ -3,6 +3,7 @@ Creates `app_name.json` manifest in `~\scoop\buckets\local`.
 
 # Usage 
 `--cwd` Full path to crate dir
+
 `--alias` Alias for shim created by Scoop
 
 Generated file will contain:
