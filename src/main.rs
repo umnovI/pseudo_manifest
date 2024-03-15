@@ -115,9 +115,14 @@ fn main() -> Result<()> {
         }}),
     };
 
-    let mut file = File::create(scoop_bucket.join(format!("{}.json", cargo_meta.name)))?;
+    let manifest_path = scoop_bucket.join(format!("{}.json", cargo_meta.name));
+    let mut file = File::create(&manifest_path)?;
     file.write_all(to_string_pretty(&manifest)?.as_bytes())?;
-    println!("{}", "Manifest file successfully created.".green());
+    println!(
+        "{} At {}",
+        "Manifest file successfully created.".green(),
+        &manifest_path.display()
+    );
 
     Ok(())
 }
