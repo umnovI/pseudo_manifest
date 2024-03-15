@@ -28,6 +28,6 @@ Generated file will contain:
 }
 ```
 
-## Installation can be done with
+## Installation
 
-`task scoop-install` or `scoop install "$HOME\scoop\buckets\local\pseudo_manifest"`
+To install file use `task scoop-install` or `scoop install "$HOME\scoop\buckets\local\pseudo_manifest"`
