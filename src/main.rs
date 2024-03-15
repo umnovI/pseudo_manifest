@@ -120,7 +120,7 @@ fn main() -> Result<()> {
         })?
     };
     let release_hash = try_digest(&release_exe)?;
-    let release_url = &release_exe.to_str().unwrap().replace(r#"\\?\"#, ""); // Scoop can't parse URL otherwise.
+    let release_url = release_exe.to_str().unwrap().replace(r#"\\?\"#, ""); // Scoop can't parse URL otherwise.
     let bin_name = release_exe
         .file_name()
         .unwrap()
