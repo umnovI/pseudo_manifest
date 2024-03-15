@@ -31,6 +31,7 @@ struct Manifest {
 struct CargoToml {
     version: String,
     name: String,
+    license: String,
 }
 
 /// This program creates pseudo manifest of your crate's release .exe for Scoop
@@ -86,6 +87,24 @@ fn main() -> Result<()> {
                 "Could not parse project version. Please check if Cargo.toml is correct."
             })?
             .to_owned(),
+        license: {
+            let package = cargo_toml["package"].as_table().unwrap();
+            if package.contains_key("license") {
+                package["license"]
+                    .as_str()
+                    .with_context(|| {
+                        "Could not parse project license. Please check if Cargo.toml is correct."
+                    })?
+                    .to_owned()
+            } else {
+                println!(
+                    "{}",
+                    "Could not find license information. Using Unknown.".yellow()
+                );
+                println!("If you want to use license in your manifest please add license key to package section.");
+                "Unknown".to_string()
+            }
+        },
     };
 
     let release_exe = {
@@ -107,7 +126,7 @@ fn main() -> Result<()> {
         url: release_exe.to_str().unwrap().to_owned(),
         hash: release_hash.to_owned(),
         bin: json!([[cargo_meta.name, args.alias]]),
-        license: "Unknown".to_string(),
+        license: cargo_meta.license,
         architecture: json!({
             "64bit": {
                 "url": release_exe.to_str().unwrap().to_owned(),
