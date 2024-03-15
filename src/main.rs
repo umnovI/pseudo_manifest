@@ -138,7 +138,8 @@ fn main() -> Result<()> {
             "64bit": {
                 "url": release_url.to_owned(),
                 "hash": release_hash.to_owned()
-        }}),
+            }
+        }),
     };
 
     let manifest_path = scoop_bucket.join(format!("{}.json", cargo_meta.name));
