@@ -10,7 +10,7 @@ Generated file will contain:
 ```json
 {
     "version": "0.0.0", // From Cargo.toml
-    "url": "path/to/local/app_name.exe",
+    "url": "app_name/target/release/app_name.exe",
     "hash": "", // sha256 of the app_name.exe
     "bin": [
         [
@@ -21,9 +21,13 @@ Generated file will contain:
     "license": "Unknown", // License from Cargo.toml or Unknown
     "architecture": {
         "64bit": {
-            "url": "path/to/local/app_name.exe",
+            "url": "app_name/target/release/app_name.exe",
             "hash": "" // sha256 of the app_name.exe
         }
     }
 }
 ```
+
+## Installation can be done with
+
+`task scoop-install` or `scoop install "$HOME\scoop\buckets\local\pseudo_manifest"`
