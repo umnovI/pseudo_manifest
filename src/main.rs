@@ -119,17 +119,22 @@ fn main() -> Result<()> {
             )
         })?
     };
-    let release_hash = try_digest(release_exe.clone())?;
+    let release_hash = try_digest(&release_exe)?;
+    let release_url = &release_exe
+        .to_str()
+        .unwrap()
+        .to_owned()
+        .replace(r#"\\?\"#, ""); // Scoop can't parse URL otherwise.
 
     let manifest = Manifest {
         version: cargo_meta.version,
-        url: release_exe.to_str().unwrap().to_owned(),
+        url: release_url.to_owned(),
         hash: release_hash.to_owned(),
-        bin: json!([[cargo_meta.name, args.alias]]),
+        bin: json!([[&release_exe.file_name().unwrap().to_str(), args.alias]]),
         license: cargo_meta.license,
         architecture: json!({
             "64bit": {
-                "url": release_exe.to_str().unwrap().to_owned(),
+                "url": release_url.to_owned(),
                 "hash": release_hash.to_owned()
         }}),
     };
