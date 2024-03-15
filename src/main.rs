@@ -147,7 +147,7 @@ fn main() -> Result<()> {
     println!(
         "{} At {}",
         "Manifest file successfully created.".green(),
-        &manifest_path.display()
+        manifest_path.display()
     );
 
     Ok(())
