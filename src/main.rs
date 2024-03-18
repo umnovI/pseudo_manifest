@@ -3,15 +3,16 @@
 use std::{
     fs::{read_to_string, File},
     io::Write,
+    path::Path,
 };
 
-use anyhow::{bail, Context, Ok, Result};
+use anyhow::{bail, Context, Error, Ok, Result};
 use clap::Parser;
 
 use colored::Colorize;
 use path_clean::clean;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, to_string_pretty, Value};
+use serde_json::{from_str, json, to_string_pretty, Value};
 use sha256::try_digest;
 use toml::Table;
 
@@ -32,6 +33,50 @@ struct CargoToml {
     version: String,
     name: String,
     license: String,
+}
+
+/// Should manifest be updated?
+struct Status {
+    needs_update: bool,
+}
+
+impl Status {
+    fn new() -> Self {
+        Self {
+            needs_update: false,
+        }
+    }
+    /// Check if existing manifest file needs updating
+    /// Doesn't return anything, but updates `needs_update` field.
+    fn check(&mut self, new_manifest: &Manifest, scoop_path: &Path) -> Result<()> {
+        if !scoop_path.is_file() {
+            return Ok(());
+        }
+        if let Result::Ok(file) = read_to_string(scoop_path) {
+            let file_data: Option<Manifest> = from_str(&file).ok();
+            if file_data.is_none() {
+                return Ok(());
+            }
+            let old_manifest = file_data.unwrap();
+            if old_manifest.hash == new_manifest.hash {
+                println!("{}", "Already up to date.".yellow());
+                return Ok(());
+            } else {
+                if old_manifest.version == new_manifest.version {
+                    return Err(Error::msg(
+                        "Unable to update manifest. \
+                        Hashes don't match, yet, app's version wasn't changed. \
+                        \nPlease, update your app's version."
+                            .red(),
+                    ));
+                }
+                self.needs_update = true;
+                return Ok(());
+            }
+        };
+
+        Ok(())
+    }
 }
 
 /// This program creates pseudo manifest of your crate's release .exe for Scoop
@@ -61,7 +106,6 @@ fn main() -> Result<()> {
             )
         })?
     };
-
     let cwd = clean(args.cwd);
     if !cwd.is_dir() {
         bail!("Could not find directory: {}", cwd.display());
@@ -107,6 +151,7 @@ fn main() -> Result<()> {
         },
     };
 
+    // Path to exe file
     let release_exe = {
         let path = cwd
             .join("target/release/")
@@ -120,7 +165,7 @@ fn main() -> Result<()> {
         })?
     };
     let release_hash = try_digest(&release_exe)?;
-    let release_url = release_exe.to_str().unwrap().replace(r#"\\?\"#, ""); // Scoop can't parse URL otherwise.
+    let release_url = release_exe.to_str().unwrap().replace(r"\\?\", ""); // Scoop can't parse URL otherwise.
     let bin_name = release_exe
         .file_name()
         .unwrap()
@@ -128,6 +173,7 @@ fn main() -> Result<()> {
         .unwrap()
         .to_owned();
 
+    // Building manifest
     let manifest = Manifest {
         version: cargo_meta.version,
         url: release_url.to_owned(),
@@ -143,13 +189,18 @@ fn main() -> Result<()> {
     };
 
     let manifest_path = scoop_bucket.join(format!("{}.json", cargo_meta.name));
-    let mut file = File::create(&manifest_path)?;
-    file.write_all(to_string_pretty(&manifest)?.as_bytes())?;
-    println!(
-        "{} At {}",
-        "Manifest file successfully created.".green(),
-        manifest_path.display()
-    );
+    let mut update_status = Status::new();
+    update_status.check(&manifest, &manifest_path)?;
+
+    if update_status.needs_update {
+        let mut file = File::create(&manifest_path)?;
+        file.write_all(to_string_pretty(&manifest)?.as_bytes())?;
+        println!(
+            "{} At {}",
+            "Manifest file successfully created.".green(),
+            manifest_path.display()
+        );
+    }
 
     Ok(())
 }
