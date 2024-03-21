@@ -37,24 +37,28 @@ struct CargoToml {
 
 /// Should manifest be updated?
 struct Status {
-    needs_update: bool,
+    update: bool,
+    create: bool,
 }
 
 impl Status {
     fn new() -> Self {
         Self {
-            needs_update: false,
+            update: false,
+            create: false,
         }
     }
     /// Check if existing manifest file needs updating
-    /// Doesn't return anything, but updates `needs_update` field.
+    /// Doesn't return anything, but updates `update` and `create` fields.
     fn check(&mut self, new_manifest: &Manifest, scoop_path: &Path) -> Result<()> {
         if !scoop_path.is_file() {
+            self.create = true;
             return Ok(());
         }
         if let Result::Ok(file) = read_to_string(scoop_path) {
             let file_data: Option<Manifest> = from_str(&file).ok();
             if file_data.is_none() {
+                self.create = true;
                 return Ok(());
             }
             let old_manifest = file_data.unwrap();
@@ -70,11 +74,12 @@ impl Status {
                             .red(),
                     ));
                 }
-                self.needs_update = true;
+                self.update = true;
                 return Ok(());
             }
         };
 
+        self.create = true;
         Ok(())
     }
 }
@@ -189,15 +194,22 @@ fn main() -> Result<()> {
     };
 
     let manifest_path = scoop_bucket.join(format!("{}.json", cargo_meta.name));
-    let mut update_status = Status::new();
-    update_status.check(&manifest, &manifest_path)?;
+    let mut manifest_status = Status::new();
+    manifest_status.check(&manifest, &manifest_path)?;
 
-    if update_status.needs_update {
+    if manifest_status.update || manifest_status.create {
         let mut file = File::create(&manifest_path)?;
         file.write_all(to_string_pretty(&manifest)?.as_bytes())?;
         println!(
-            "{} At {}",
-            "Manifest file successfully created.".green(),
+            "{} {} At {}",
+            "Manifest file successfully".green(),
+            if manifest_status.update {
+                "updated".green()
+            } else if manifest_status.create {
+                "created".green()
+            } else {
+                "unexpected value".red()
+            },
             manifest_path.display()
         );
     }
