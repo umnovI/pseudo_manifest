@@ -96,6 +96,10 @@ struct Args {
     #[arg(long)]
     /// Alias for Scoop shim
     alias: String,
+
+    #[arg(long, short)]
+    /// Look for a specific file
+    file: String,
 }
 
 fn main() -> Result<()> {
@@ -157,27 +161,33 @@ fn main() -> Result<()> {
     };
 
     // Path to exe file
-    let release_exe = {
-        let path = cwd
-            .join("target/release/")
-            .join(format!("{}.exe", cargo_meta.name));
+    let release_file = {
+        if args.file.is_empty() {
+            let path = cwd
+                .join("target/release/")
+                .join(format!("{}.exe", cargo_meta.name));
 
-        path.canonicalize().with_context(|| {
-            format!(
-                "Could not get {}. Have you compiled release?",
-                path.display()
-            )
-        })?
+            path.canonicalize().with_context(|| {
+                format!(
+                    "Could not get {}. Have you compiled release?",
+                    path.display()
+                )
+            })?
+        } else {
+            let path = Path::new(&args.file);
+            path.canonicalize()
+                .with_context(|| format!("Could not find provided path: {}", path.display()))?
+        }
     };
-    let release_hash = try_digest(&release_exe)?;
-    let release_url = release_exe.to_str().unwrap().replace(r"\\?\", ""); // Scoop can't parse URL otherwise.
-    let bin_name = release_exe
+
+    let release_hash = try_digest(&release_file)?;
+    let release_url = release_file.to_str().unwrap().replace(r"\\?\", ""); // Scoop can't parse URL otherwise.
+    let bin_name = release_file
         .file_name()
         .unwrap()
         .to_str()
         .unwrap()
         .to_owned();
-
     // Building manifest
     let manifest = Manifest {
         version: cargo_meta.version,
