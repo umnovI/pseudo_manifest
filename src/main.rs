@@ -100,6 +100,10 @@ struct Args {
     #[arg(long, short)]
     /// Look for a specific file
     file: Option<String>,
+
+    #[arg(long, short)]
+    /// Name of the installed exe
+    bin: Option<String>,
 }
 
 fn main() -> Result<()> {
@@ -183,12 +187,17 @@ fn main() -> Result<()> {
 
     let release_hash = try_digest(&release_file)?;
     let release_url = release_file.to_str().unwrap().replace(r"\\?\", ""); // Scoop can't parse URL otherwise.
-    let bin_name = release_file
-        .file_name()
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .to_owned();
+    let bin_name = if args.bin.is_none() {
+        release_file
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned()
+    } else {
+        args.bin.unwrap()
+    };
+
     // Building manifest
     let manifest = Manifest {
         version: cargo_meta.version,
