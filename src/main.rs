@@ -99,7 +99,7 @@ struct Args {
 
     #[arg(long, short)]
     /// Look for a specific file
-    file: String,
+    file: Option<String>,
 }
 
 fn main() -> Result<()> {
@@ -162,7 +162,7 @@ fn main() -> Result<()> {
 
     // Path to exe file
     let release_file = {
-        if args.file.is_empty() {
+        if args.file.is_none() {
             let path = cwd
                 .join("target/release/")
                 .join(format!("{}.exe", cargo_meta.name));
@@ -174,7 +174,8 @@ fn main() -> Result<()> {
                 )
             })?
         } else {
-            let path = Path::new(&args.file);
+            let file = args.file.unwrap();
+            let path = Path::new(&file);
             path.canonicalize()
                 .with_context(|| format!("Could not find provided path: {}", path.display()))?
         }
