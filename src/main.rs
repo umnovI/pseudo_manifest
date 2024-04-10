@@ -24,6 +24,7 @@ struct Manifest {
     url: String,
     hash: String,
     bin: Value,
+    shortcuts: Value,
     license: String,
     architecture: Value,
 }
@@ -94,35 +95,52 @@ struct Args {
     cwd: String,
 
     #[arg(long)]
-    /// Alias for Scoop shim
+    /// Alias for Scoop shim or Shortcut.
+    /// Alias should be meaningful when creating a shortcut
     alias: String,
 
     #[arg(long, short)]
     /// Look for a specific file
     file: Option<String>,
 
-    #[arg(long, short)]
+    #[arg(long)]
     /// Name of the installed exe
     bin: Option<String>,
+
+    #[arg(long)]
+    /// Is this a gui app or cli?
+    /// Defaults to false i.e. cli.
+    gui: bool,
+
+    #[arg(long)]
+    /// Debug manifest creation. Created manifest in cwd.
+    debug: bool,
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let scoop_bucket = {
-        let path = home::home_dir()
-            .with_context(|| "Could not find home.")?
-            .join("scoop/buckets/local");
-        path.canonicalize().with_context(|| {
-            format!(
-                "Could not find Scoop bucket. Please make sure dir '{}' exists.",
-                path.display()
-            )
-        })?
-    };
+
     let cwd = clean(args.cwd);
     if !cwd.is_dir() {
         bail!("Could not find directory: {}", cwd.display());
     }
+
+    let scoop_bucket = {
+        if !args.debug {
+            let path = home::home_dir()
+                .with_context(|| "Could not find home.")?
+                .join("scoop/buckets/local");
+            path.canonicalize().with_context(|| {
+                format!(
+                    "Could not find Scoop bucket. Please make sure dir '{}' exists.",
+                    path.display()
+                )
+            })?
+        } else {
+            cwd.to_owned()
+        }
+    };
+
     let cargo_toml = read_to_string(
         cwd.join("Cargo.toml")
             .canonicalize()
@@ -203,7 +221,16 @@ fn main() -> Result<()> {
         version: cargo_meta.version,
         url: release_url.to_owned(),
         hash: release_hash.to_owned(),
-        bin: json!([[bin_name, args.alias]]),
+        bin: if !args.gui {
+            json!([[bin_name, args.alias]])
+        } else {
+            serde_json::to_value(bin_name.to_owned())?
+        },
+        shortcuts: if args.gui {
+            json!([[bin_name, args.alias]])
+        } else {
+            json!([])
+        },
         license: cargo_meta.license,
         architecture: json!({
             "64bit": {
@@ -215,9 +242,11 @@ fn main() -> Result<()> {
 
     let manifest_path = scoop_bucket.join(format!("{}.json", cargo_meta.name));
     let mut manifest_status = Status::new();
-    manifest_status.check(&manifest, &manifest_path)?;
+    if !args.debug {
+        manifest_status.check(&manifest, &manifest_path)?;
+    }
 
-    if manifest_status.update || manifest_status.create {
+    if manifest_status.update || manifest_status.create || args.debug {
         let mut file = File::create(&manifest_path)?;
         file.write_all(to_string_pretty(&manifest)?.as_bytes())?;
         println!(
@@ -228,10 +257,12 @@ fn main() -> Result<()> {
             } else if manifest_status.create {
                 "created".green()
             } else {
-                "unexpected value".red()
+                "created for debugging".red()
             },
             manifest_path.display()
         );
+    } else {
+        println!("{}", "Could not determine what to do.".red());
     }
 
     Ok(())
